@@ -18,6 +18,9 @@ if response.status_code == 200:
 
     extensiones_permitidas = ['.mkv', '.mp4', '.avi', '.srt', '.sub', '.vtt', '.ass']
 
+    total_size_general = 0  # Tamaño total de todos los archivos
+    total_descargado_general = 0  # Tamaño descargado hasta el momento de todos los archivos
+
     for link in links:
         href = link.get('href')
         for extension in extensiones_permitidas:
@@ -30,15 +33,21 @@ if response.status_code == 200:
 
                 with requests.get(archivo_url, stream=True) as r:
                     r.raise_for_status()
-                    with open(ruta_archivo_destino, 'wb') as f:
-                        total_size = int(r.headers.get('content-length', 0))
-                        with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-                            for chunk in r.iter_content(chunk_size=8192):
-                                if chunk:
-                                    f.write(chunk)
-                                    pbar.update(len(chunk))
+                    total_size = int(r.headers.get('content-length', 0))
 
+                    # Barra de progreso individual para cada archivo
+                    with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                with open(ruta_archivo_destino, 'ab') as f:
+                                    f.write(chunk)
+                                total_descargado_general += len(chunk)
+                                pbar.update(len(chunk))
                 print(f'Descargado: {nombre_archivo}')
+
+                # Actualizar la barra de progreso general
+                with tqdm(total=total_size_general, unit='B', unit_scale=True, unit_divisor=1024) as pbar_general:
+                    pbar_general.update(total_descargado_general - pbar_general.n)
 
     print('Descarga completa.')
 else:
