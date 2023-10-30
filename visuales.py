@@ -31,23 +31,28 @@ if response.status_code == 200:
                 
                 ruta_archivo_destino = os.path.join(carpeta_destino, nombre_archivo)
 
-                with requests.get(archivo_url, stream=True) as r:
-                    r.raise_for_status()
-                    total_size = int(r.headers.get('content-length', 0))
+                # Verificar si el archivo ya existe en la carpeta de destino
+                if not os.path.exists(ruta_archivo_destino):
+                    with requests.get(archivo_url, stream=True) as r:
+                        r.raise_for_status()
+                        total_size = int(r.headers.get('content-length', 0))
 
-                    # Barra de progreso individual para cada archivo
-                    with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                with open(ruta_archivo_destino, 'ab') as f:
-                                    f.write(chunk)
-                                total_descargado_general += len(chunk)
-                                pbar.update(len(chunk))
-                print(f'Descargado: {nombre_archivo}')
+                        # Barra de progreso individual para cada archivo
+                        with tqdm(total=total_size, unit='B', unit_scale=True, unit_divisor=1024) as pbar:
+                            pbar.set_description(f'Descargando: {nombre_archivo}')  # Establecer el nombre del archivo
+                            for chunk in r.iter_content(chunk_size=8192):
+                                if chunk:
+                                    with open(ruta_archivo_destino, 'ab') as f:
+                                        f.write(chunk)
+                                    total_descargado_general += len(chunk)
+                                    pbar.update(len(chunk))
+                    print(f'Descargado: {nombre_archivo}')
 
-                # Actualizar la barra de progreso general
-                with tqdm(total=total_size_general, unit='B', unit_scale=True, unit_divisor=1024) as pbar_general:
-                    pbar_general.update(total_descargado_general - pbar_general.n)
+                    # Actualizar la barra de progreso general
+                    with tqdm(total=total_size_general, unit='B', unit_scale=True, unit_divisor=1024) as pbar_general:
+                        pbar_general.update(total_descargado_general - pbar_general.n)
+                else:
+                    print(f'El archivo {nombre_archivo} ya existe, se omitirá la descarga.')
 
     print('Descarga completa.')
 else:
