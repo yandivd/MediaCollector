@@ -50,7 +50,7 @@ if __name__ == '__main__':
     url = input('Inserte una URL para comenzar la descarga: ')
     carpeta_destino_base = 'Descargas'
     os.makedirs(carpeta_destino_base, exist_ok=True)
-    extensiones_permitidas = ['.mkv', '.mp4', '.avi', '.srt', '.sub', '.vtt', '.ass']
+    extensiones_permitidas = ['.mkv', '.mp4', '.avi', '.srt', '.sub', '.vtt', '.ass', '.jpg', '.jpeg', '.png']
 
     descargar_carpeta(url, carpeta_destino_base)
     print('Descarga completa.')
