@@ -20,17 +20,12 @@ def descargar_archivo(url, carpeta_destino):
                     pbar.update(len(chunk))
         print(f'Descargado: {nombre_archivo}')
 
-def descargar_carpeta(url, carpeta_destino_base):
+def explorar_carpeta(url, carpeta_destino):
     response = requests.get(url)
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         links = soup.find_all('a')
-
-        # Obtener el último segmento de la URL como nombre de carpeta
-        nombre_carpeta = url.split('/')[-1]
-        carpeta_destino = os.path.join(carpeta_destino_base, nombre_carpeta)
-        os.makedirs(carpeta_destino, exist_ok=True)
 
         for link in links:
             href = link.get('href')
@@ -38,13 +33,33 @@ def descargar_carpeta(url, carpeta_destino_base):
                 carpeta_url = f'{url}/{href}'
                 nombre_carpeta = href.rstrip('/')
                 carpeta_destino_carpeta = os.path.join(carpeta_destino, nombre_carpeta)
-                os.makedirs(carpeta_destino_carpeta, exist_ok=True)
-                descargar_carpeta(carpeta_url, carpeta_destino_carpeta)
+
+                if not os.path.exists(carpeta_destino_carpeta):
+                    os.makedirs(carpeta_destino_carpeta, exist_ok=True)
+                    explorar_carpeta(carpeta_url, carpeta_destino_carpeta)
+                else:
+                    print(f'La carpeta {nombre_carpeta} ya existe. Explorando...')
+                    explorar_carpeta(carpeta_url, carpeta_destino_carpeta)
             else:
                 for extension in extensiones_permitidas:
                     if href.endswith(extension):
                         archivo_url = f'{url}/{href}'
-                        descargar_archivo(archivo_url, carpeta_destino)
+                        nombre_archivo = href.split('/')[-1]
+                        ruta_archivo_destino = os.path.join(carpeta_destino, nombre_archivo)
+
+                        if not os.path.exists(ruta_archivo_destino):
+                            print(f'Descargando archivo: {nombre_archivo}')
+                            descargar_archivo(archivo_url, carpeta_destino)
+                        else:
+                            print(f'El archivo {nombre_archivo} ya existe. Verificando completitud...')
+                            if not archivo_completo(ruta_archivo_destino):
+                                print(f'El archivo {nombre_archivo} está incompleto. Descargando nuevamente...')
+                                descargar_archivo(archivo_url, carpeta_destino)
+                            else:
+                                print(f'El archivo {nombre_archivo} ya existe y está completo.')
+
+def archivo_completo(ruta_archivo):
+    return os.path.getsize(ruta_archivo) > 0
 
 if __name__ == '__main__':
     url = input('Inserte una URL para comenzar la descarga: ')
@@ -52,5 +67,5 @@ if __name__ == '__main__':
     os.makedirs(carpeta_destino_base, exist_ok=True)
     extensiones_permitidas = ['.mkv', '.mp4', '.avi', '.srt', '.sub', '.vtt', '.ass', '.jpg', '.jpeg', '.png']
 
-    descargar_carpeta(url, carpeta_destino_base)
+    explorar_carpeta(url, carpeta_destino_base)
     print('Descarga completa.')
